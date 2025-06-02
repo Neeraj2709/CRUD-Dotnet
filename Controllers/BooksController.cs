@@ -1,8 +1,10 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using BookManagementAPI.Database;
 using BookManagementAPI.DTOs;
-using BookManagementAPI.Models;
+using BookManagementAPI.Application.Books.Commands;
+using BookManagementAPI.Application.Books.Handlers;
+using BookManagementAPI.Features.Books.Commands;
+using BookManagementAPI.Features.Books.Queries;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BookManagementAPI.Controllers
 {
@@ -10,125 +12,54 @@ namespace BookManagementAPI.Controllers
     [Route("api/[controller]")]
     public class BooksController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IMediator _mediator;
 
-        public BooksController(ApplicationDbContext context)
+        public BooksController(IMediator mediator)
         {
-            _context = context;
+            _mediator = mediator;
         }
 
-        // Get All Books
+        [HttpPost]
+        public async Task<IActionResult> CreateBook([FromBody] BookRequest request)
+        {
+            var command = new CreateBookCommand(request);
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+
+
         [HttpGet]
         public async Task<IActionResult> GetAllBooks()
         {
-            var books = await _context.Books.ToListAsync();
+            var books = await _mediator.Send(new GetAllBooksQuery());
             return Ok(books);
         }
 
-        // Get Book by Id
         [HttpGet("{id}")]
         public async Task<IActionResult> GetBookById(int id)
         {
-            var book = await _context.Books.FindAsync(id);
-            return book != null ? Ok(book) : NotFound(new { message = "Book not found" });
+            var book = await _mediator.Send(new GetBookByIdQuery(id));
+            return book is null
+                ? NotFound(new { message = $"Book with ID {id} not found." })
+                : Ok(book);
         }
 
-        // Get Books by Username
-        [HttpGet("user/{username}")]
-        public async Task<IActionResult> GetBooksByUsername(string username)
-        {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
-            if (user == null) return NotFound(new { message = "User not found" });
-
-            var books = await _context.Books.Where(b => b.UserId == user.Id).ToListAsync();
-            return Ok(books);
-        }
-
-        // Create Book
-        [HttpPost]
-        public async Task<IActionResult> CreateBook([FromBody] BookRequest bookRequest)
-        {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == bookRequest.Username);
-            if (user == null) return NotFound(new { message = "User not found" });
-
-            var book = new Book
-            {
-                Title = bookRequest.Title,
-                Author = bookRequest.Author,
-                IsRead = bookRequest.IsRead,
-                UserId = user.Id
-            };
-
-            _context.Books.Add(book);
-            await _context.SaveChangesAsync();
-
-            var bookResponse = new BookResponse
-            {
-                Id = book.Id,
-                Title = book.Title,
-                Author = book.Author,
-                IsRead = book.IsRead,
-                Username = user.Username
-            };
-
-            return CreatedAtAction(nameof(GetBookById), new { id = book.Id }, bookResponse);
-        }
-
-        // Update Book
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateBook(int id, [FromBody] BookRequest bookRequest)
+        public async Task<IActionResult> UpdateBook(int id, [FromBody] BookRequest request)
         {
-            var book = await _context.Books.FindAsync(id);
-            if (book == null) return NotFound(new { message = "Book not found" });
-
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == bookRequest.Username);
-            if (user == null || user.Id != book.UserId)
-                return Unauthorized(new { message = "You are not authorized to update this book" });
-
-            book.Title = bookRequest.Title;
-            book.Author = bookRequest.Author;
-            book.IsRead = bookRequest.IsRead;
-
-            _context.Books.Update(book);
-            await _context.SaveChangesAsync();
-
-            return Ok(book);
+            var updated = await _mediator.Send(new UpdateBookCommand(id, request));
+            return updated is null
+                ? NotFound(new { message = $"Book with ID {id} not found." })
+                : Ok(updated);
         }
 
-        // Update Book Status
-        [HttpPatch("{id}")]
-        public async Task<IActionResult> UpdateBookStatus(int id, [FromBody] BookRequest bookRequest)
-        {
-            var book = await _context.Books.FindAsync(id);
-            if (book == null) return NotFound(new { message = "Book not found" });
-
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == bookRequest.Username);
-            if (user == null || user.Id != book.UserId)
-                return Unauthorized(new { message = "You are not authorized to update this book status" });
-
-            book.IsRead = bookRequest.IsRead;
-
-            _context.Books.Update(book);
-            await _context.SaveChangesAsync();
-
-            return Ok(book);
-        }
-
-        // Delete Book
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteBook(int id, [FromQuery] string username)
+        public async Task<IActionResult> DeleteBook(int id)
         {
-            var book = await _context.Books.FindAsync(id);
-            if (book == null) return NotFound(new { message = "Book not found" });
-
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
-            if (user == null || user.Id != book.UserId)
-                return Unauthorized(new { message = "You are not authorized to delete this book" });
-
-            _context.Books.Remove(book);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Book deleted successfully" });
+            var success = await _mediator.Send(new DeleteBookCommand(id));
+            return !success
+                ? NotFound(new { message = $"Book with ID {id} not found." })
+                : NoContent();
         }
     }
 }

@@ -1,7 +1,9 @@
+using BookManagementAPI.Application.Users.Queries;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BookManagementAPI.Database;
 using BookManagementAPI.Models;
+using MediatR;
 
 namespace BookManagementAPI.Controllers
 {
@@ -10,18 +12,21 @@ namespace BookManagementAPI.Controllers
     public class UsersController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IMediator _mediator;
 
-        public UsersController(ApplicationDbContext context)
+        public UsersController(ApplicationDbContext context, IMediator mediator)
         {
             _context = context;  
+            _mediator = mediator; 
         }
     // Get All Users
         [HttpGet]
         public async Task<IActionResult> GetAllUsers()
         {
-            var users = await _context.Users.ToListAsync();
+            var users = await _mediator.Send(new GetAllUsersQuery());
             return users.Any() ? Ok(users) : NotFound(new { message = "No users found." });
         }
+
     //Add User
         [HttpPost]
         public async Task<IActionResult> AddUser([FromBody] User user)

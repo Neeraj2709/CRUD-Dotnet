@@ -194,3 +194,7 @@
 /Users/neeraj/RiderProjects/BookManagementAPI/BookManagementAPI/bin/Debug/net9.0/tr/Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 /Users/neeraj/RiderProjects/BookManagementAPI/BookManagementAPI/bin/Debug/net9.0/zh-Hans/Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 /Users/neeraj/RiderProjects/BookManagementAPI/BookManagementAPI/bin/Debug/net9.0/zh-Hant/Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
+/Users/neeraj/RiderProjects/BookManagementAPI/BookManagementAPI/obj/Debug/net9.0/BookManagementAPI.sourcelink.json
+/Users/neeraj/RiderProjects/BookManagementAPI/BookManagementAPI/bin/Debug/net9.0/MediatR.dll
+/Users/neeraj/RiderProjects/BookManagementAPI/BookManagementAPI/bin/Debug/net9.0/MediatR.Contracts.dll
+/Users/neeraj/RiderProjects/BookManagementAPI/BookManagementAPI/bin/Debug/net9.0/MediatR.Extensions.Microsoft.DependencyInjection.dll
